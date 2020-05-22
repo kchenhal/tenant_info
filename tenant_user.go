@@ -72,7 +72,6 @@ func generateTenantInfo() {
 		if err != nil {
 			panic(err)
 		}
-		defer db.Close()
 
 		t := time.Now()
 
@@ -84,9 +83,9 @@ func generateTenantInfo() {
 		fmt.Printf("current time is %s, ts is %d\n", currentTime, unixTime)
 
 		rows, err := db.Query(
-			`SELECT t.name,  MAX(f.updated_at) FROM public."Flows" f 
-			 INNER JOIN public."Tenants" t on f.tenant_id=t.id
-			 GROUP BY t.name`)
+			`SELECT t.name,  MAX(s.date) FROM public."SystemEvents" s 
+			INNER JOIN public."Tenants" t on s.tenant_id=t.id
+			GROUP BY t.name`)
 
 		if err != nil {
 			panic(err)
@@ -96,12 +95,14 @@ func generateTenantInfo() {
 			var name string
 			var lastSeen time.Time
 			if e := rows.Scan(&name, &lastSeen); e == nil {
-				fmt.Printf("row:  %s %s\n", name, lastSeen.String())
-				tenantUsage.WithLabelValues("DC-1", name, currentTime).Set(float64(lastSeen.Unix()))
+				fmt.Printf("row:  %s %s, ts=%d\n", name, lastSeen.String(), lastSeen.Unix()*1000)
+				tenantUsage.WithLabelValues("DC-1", name, currentTime).Set(float64(lastSeen.Unix() * 1000))
 			} else {
 				panic(e)
 			}
 		}
-		time.Sleep(time.Duration(tenantInterval) * time.Minute)
+
+		db.Close()
+		time.Sleep(tenantInterval)
 	}
 }
