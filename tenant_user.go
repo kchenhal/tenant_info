@@ -54,13 +54,13 @@ func setupDBConnection() string {
 
 func generateTenantInfo() {
 
-	if h := os.Getenv("INTERVAL_MINUTES"); h != "" {
-		i, err := strconv.ParseInt(h, 10, 32)
+	if h := os.Getenv("POLLING_DURATION"); h != "" {
+		duration, err := time.ParseDuration(h)
 		if err == nil {
-			tenantInterval = time.Duration(i) * time.Minute
-			fmt.Printf("set metrics querying cycle to %d minutes \n", i)
+			fmt.Printf("set metrics querying cycle to %s minutes \n", h)
+			tenantInterval = duration
 		} else {
-			panic("cannot convert INTERVAL_MINUTES to integer")
+			panic("invalid POLLING_DURATION: " + h)
 		}
 	}
 
